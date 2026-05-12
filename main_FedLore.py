@@ -7,27 +7,24 @@ from copy import deepcopy
 import ray
 import argparse
 from tensorboardX import SummaryWriter
-from transformers import BertTokenizer, BertForSequenceClassification
 from DomainNet import DomainNet
 from dirichlet_data2 import data_from_dirichlet
 from lora_SVD import aggregate_AB_then_SVD, aggregate_FRLORA
 from lora_fair import apply_weights_lora_fair, apply_weights_lora_fair_CV
-from models import ResNet18, ResNet18BN, ResNet10, ResNet10BN
-from models.DeiTTiny import ViTForCIFAR, deit_tiny_256
+from models.DeiTTiny import ViTForCIFAR
 from sam import SAM
 os.environ["RAY_DISABLE_MEMORY_MONITOR"] = "1"
-from model import swin_tiny_patch4_window7_224 as swin_tiny
-from model import swin_small_patch4_window7_224 as swin_small
-from model import swin_large_patch4_window7_224_in22k as swin_large
 from model import swin_base_patch4_window7_224_in22k as swin_base
 from vit_model import vit_base_patch16_224_in21k as vit_B
-from vit_model import vit_large_patch16_224_in21k as vit_L
-from sam import SAM
 import torch, gc
 from peft import LoraConfig, get_peft_model, TaskType
+
+# 论文视觉实验中保留的模型：ViT-Base、Swin-Base、ViT-Tiny。
+# 当前文件是视觉分类脚本，因此不在这里加入论文中的 RoBERTa-Base / LLaMA 代码。
+PAPER_VISION_MODELS = ("VIT-B", "swin_base", "deit_tiny")
 gc.collect()
 torch.cuda.empty_cache()
-#python  new_lora.py --alg FLORA --lr 0.001 --data_name CIFAR100 --alpha_value 0.1 --alpha  0.9  --epoch 101  --extname CIFAR100 --lr_decay 0.98 --gamma 0.3 --CNN swin_tiny --E 1 --batch_size 16  --gpu 0 --p 2 --num_gpus_per 0.25 --selection 0.04 --print 0 --rho 0.1 --num_workers 100 --preprint 5 --lora 1 --r 16 --optimizer SGD
+# Example: python new_lora.py --alg FedIT --lr 0.001 --data_name CIFAR100 --alpha_value 0.1 --epoch 100 --CNN swin_base --E 1 --batch_size 16 --gpu 0 --selection 0.04 --num_workers 100 --r 8
 parser = argparse.ArgumentParser()
 parser.add_argument('--lr', default=0.01, type=float, help='learning rate')
 parser.add_argument('--lg', default=1.0, type=float, help='learning rate')
@@ -47,10 +44,10 @@ parser.add_argument('--selection', default='0.06', type=float, help=' C')
 parser.add_argument('--check', default=0, type=int, help=' if check')
 parser.add_argument('--T_part', default=10, type=int, help=' for mom_step')
 parser.add_argument('--alpha', default=1, type=float, help=' for mom_step')
-parser.add_argument('--CNN', default='VIT-L', type=str, help=' for mom_step')
+parser.add_argument('--CNN', default='VIT-B', type=str, choices=PAPER_VISION_MODELS, help='model backbone used in the paper')
 parser.add_argument('--gamma', default=0.9, type=float, help=' for mom_step')
-parser.add_argument('--weights', type=str, default='./swin_tiny_patch4_window7_224.pth',
-                    help='initial weights path')
+parser.add_argument('--weights', type=str, default='',
+                    help='optional pretrained weights path for VIT-B or swin_base')
 # 是否冻结权重
 parser.add_argument('--p', default=3, type=int, help=' for mom_step')
 parser.add_argument('--datapath', type=str,
@@ -76,34 +73,27 @@ num_gpus_per = args.num_gpus_per  # num_gpus_per = 0.16
 num_gpus = len(gpu_idx.split(','))
 data_name = args.data_name
 CNN = args.CNN
-if CNN in ['VIT-B', 'swin_tiny', 'swin_large', 'VIT-L', 'swin_small', 'swin_base']:
-    lora_config = LoraConfig(
-        r=args.r,  # 低秩矩阵的秩，通常在 4 到 64 之间[^18^]
-        lora_alpha=args.r*2,  # 缩放参数，通常为 r 的 2 到 32 倍[^18^]
-        lora_dropout=0.05,  # Dropout 比率，防止过拟合[^18^]
-        bias="none",  # 不训练偏置项[^18^]
-        task_type="IMAGE_CLASSIFICATION",  # 任务类型，根据具体任务选择[^18^]
-        target_modules=['attn.qkv', 'attn.proj']  # 目标模块，根据模型结构指定[^18^]
-    )
+if CNN not in PAPER_VISION_MODELS:
+    raise ValueError(f"Unsupported CNN={CNN}. Paper vision models are: {PAPER_VISION_MODELS}")
+
 lora_config = LoraConfig(
-    r=args.r,  # 低秩矩阵的秩，通常在 4 到 64 之间[^18^]
-    lora_alpha=args.r*2,  # 缩放参数，通常为 r 的 2 到 32 倍[^18^]
-    lora_dropout=0.05,  # Dropout 比率，防止过拟合[^18^]
-    bias="none",  # 不训练偏置项[^18^]
-    task_type="IMAGE_CLASSIFICATION",  # 任务类型，根据具体任务选择[^18^]
-    target_modules=['attn.qkv', 'attn.proj']  # 目标模块，根据模型结构指定[^18^]
+    r=args.r,
+    lora_alpha=args.r * 2,
+    lora_dropout=0.05,
+    bias="none",
+    task_type="IMAGE_CLASSIFICATION",
+    target_modules=['attn.qkv', 'attn.proj']
 )
 
-if CNN in ['VIT-B', 'swin_tiny', 'swin_large', 'VIT-L', 'swin_small', 'swin_base', 'resnet18pre', 'resnet50pre',
-           'resnet101pre'] :
+if CNN in ['VIT-B', 'swin_base']:
     transform_train = transforms.Compose([
-        transforms.Resize((224, 224)),  # 将图像大小调整为 ResNet-18 输入的大小
+        transforms.Resize((224, 224)),  # 将图像大小调整为 Transformer 输入大小
         transforms.ToTensor(),  # 转换为 Tensor
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # 标准化
     ])
     if data_name == 'imagenet':
         transform_train = transforms.Compose([
-            transforms.Resize((224, 224)),  # 将图像大小调整为 ResNet-18 输入的大小
+            transforms.Resize((224, 224)),  # 将图像大小调整为 Transformer 输入大小
             transforms.ToTensor(),  # 转换为 Tensor
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # 标准化
         ])
@@ -195,7 +185,6 @@ elif data_name == 'Caltech256':
         [train_size, val_size, test_size],
         generator=generator
     )
-
 
 
 if data_name.startswith("domainnet"):
@@ -296,8 +285,6 @@ if args.alpha_value!=1:
         return train_loader
 
 
-
-
 def get_data_loader_test(data_name):
     """Safely downloads data. Returns training/validation set dataloader."""
     if data_name == 'imagenet':
@@ -326,7 +313,6 @@ def get_data_loader_test(data_name):
     return test_loader
 
 
-
 def get_data_loader_train(data_name):
     """Safely downloads data. Returns training/validation set dataloader."""
     if data_name == 'imagenet':
@@ -353,7 +339,6 @@ def get_data_loader_train(data_name):
         shuffle=False,
         num_workers=4)
     return train_loader
-
 
 
 def evaluate(model, test_loader, train_loader):
@@ -391,6 +376,8 @@ if CNN == 'swin_base':
         return swin_base(num_classes=100)
     def ConvNet200():
         return swin_base(num_classes=200)
+    def ConvNet345():
+        return swin_base(num_classes=345)
 
 if CNN == 'VIT-B':
     def ConvNet():
@@ -402,46 +389,6 @@ if CNN == 'VIT-B':
     def ConvNet345():
         return vit_B(num_classes=345)
 
-if CNN == 'VIT-L':
-    def ConvNet():
-        return vit_L(num_classes=10)
-    def ConvNet100():
-        return vit_L(num_classes=100)
-    def ConvNet200():
-        return vit_L(num_classes=200)
-
-if CNN == 'resnet10':
-    if args.normalization == 'BN':
-        def ConvNet(num_classes=10):
-            return ResNet10BN(num_classes=10)
-        def ConvNet100(num_classes=100):
-            return ResNet10BN(num_classes=100)
-        def ConvNet200(num_classes=200):
-            return ResNet10BN(num_classes=200)
-    if args.normalization == 'GN':
-        def ConvNet(num_classes=10):
-            return ResNet10(num_classes=10)
-        def ConvNet100(num_classes=100):
-            return ResNet10(num_classes=100)
-        def ConvNet200(num_classes=200):
-            return ResNet10(num_classes=200)
-
-
-if CNN == 'resnet18':
-    if args.normalization == 'BN':
-        def ConvNet(num_classes=10, l2_norm=False):
-            return ResNet18BN(num_classes=10)
-        def ConvNet100(num_classes=100, l2_norm=False):
-            return ResNet18BN(num_classes=100)
-        def ConvNet200(num_classes=200, l2_norm=False):
-            return ResNet18BN(num_classes=200)
-    if args.normalization == 'GN':
-        def ConvNet(num_classes=10):
-            return ResNet18(num_classes=10)
-        def ConvNet100(num_classes=100):
-            return ResNet18(num_classes=100)
-        def ConvNet200(num_classes=200):
-            return ResNet18(num_classes=200)
 
 if CNN == 'deit_tiny':
     def ConvNet(num_classes=10):
@@ -450,25 +397,10 @@ if CNN == 'deit_tiny':
         return ViTForCIFAR(num_classes=100, img_size=32)
     def ConvNet200(num_classes=200):
         return ViTForCIFAR(num_classes=200, img_size=64)
+    def ConvNet345(num_classes=345):
+        return ViTForCIFAR(num_classes=345, img_size=224)
 
-if CNN == 'deit_tiny_256':
-    def ConvNet(num_classes=10):
-        return deit_tiny_256(num_classes=10, img_size=32)
-    def ConvNet100(num_classes=100):
-        return deit_tiny_256(num_classes=100, img_size=32)
-    def ConvNet200(num_classes=200):
-        return deit_tiny_256(num_classes=200, img_size=64)
 
-from src.cct import cct_7_3x1_32_c100
-import torch
-if CNN == 'cct':
-    model = cct_7_3x1_32_c100(pretrained=False, progress=True, num_classes=100)
-    def ConvNet(num_classes=10):
-        return cct_7_3x1_32_c100(pretrained=False, progress=True, num_classes=10)
-    def ConvNet100(num_classes=100):
-        return cct_7_3x1_32_c100(pretrained=False, progress=True, num_classes=100)
-    def ConvNet200(num_classes=200):
-        return cct_7_3x1_32_c100(pretrained=False, progress=True, num_classes=200)
 import math
 import torch
 from torch import nn
@@ -1384,65 +1316,29 @@ if __name__ == "__main__":
     if args.CNN == 'VIT-B':
         if args.weights != "":
             assert os.path.exists(args.weights), "weights file: '{}' not exist.".format(args.weights)
-            weights_dict = torch.load('vit_base_patch16_224_in21k.pth', map_location=device)
+            weights_dict = torch.load(args.weights, map_location=device)
             # 删除不需要的权重
             del_keys = ['head.weight', 'head.bias'] if model.has_logits \
                 else ['pre_logits.fc.weight', 'pre_logits.fc.bias', 'head.weight', 'head.bias']
             for k in del_keys:
-                del weights_dict[k]
-            print(model.load_state_dict(weights_dict, strict=False))
-
-    if args.CNN == 'VIT-L':
-        if args.weights != "":
-            assert os.path.exists(args.weights), "weights file: '{}' not exist.".format(args.weights)
-            weights_dict = torch.load('jx_vit_large_patch16_224_in21k-606da67d.pth', map_location=device)
-            # 删除不需要的权重
-            del_keys = ['head.weight', 'head.bias'] if model.has_logits \
-                else ['pre_logits.fc.weight', 'pre_logits.fc.bias', 'head.weight', 'head.bias']
-            for k in del_keys:
-                del weights_dict[k]
-            print(model.load_state_dict(weights_dict, strict=False))
-
-    if args.CNN == 'swin_tiny':
-        if args.weights != "":
-            assert os.path.exists(args.weights), "weights file: '{}' not exist.".format(args.weights)
-            weights_dict = torch.load('swin_tiny_patch4_window7_224.pth', map_location=device)["model"]
-            # 删除有关分类类别的权重
-            for k in list(weights_dict.keys()):
-                if "head" in k:
+                if k in weights_dict:
                     del weights_dict[k]
             print(model.load_state_dict(weights_dict, strict=False))
 
-    if args.CNN == 'swin_small':
-        if args.weights != "":
-            assert os.path.exists(args.weights), "weights file: '{}' not exist.".format(args.weights)
-            weights_dict = torch.load('swin_small_patch4_window7_224.pth', map_location=device)["model"]
-            # 删除有关分类类别的权重
-            for k in list(weights_dict.keys()):
-                if "head" in k:
-                    del weights_dict[k]
-            print(model.load_state_dict(weights_dict, strict=False))
 
     if args.CNN == 'swin_base':
 
         if args.weights != "":
             assert os.path.exists(args.weights), "weights file: '{}' not exist.".format(args.weights)
-            weights_dict = torch.load('swin_base_patch4_window7_224_22k.pth', map_location=device)["model"]
+            weights_dict = torch.load(args.weights, map_location=device)
+            if isinstance(weights_dict, dict) and "model" in weights_dict:
+                weights_dict = weights_dict["model"]
             # 删除有关分类类别的权重
             for k in list(weights_dict.keys()):
                 if "head" in k:
                     del weights_dict[k]
             print(model.load_state_dict(weights_dict, strict=False))
 
-    if args.CNN == 'swin_large':
-        if args.weights != "":
-            assert os.path.exists(args.weights), "weights file: '{}' not exist.".format(args.weights)
-            weights_dict = torch.load('swin_large_patch4_window7_224_22k.pth', map_location=device)["model"]
-            # 删除有关分类类别的权重
-            for k in list(weights_dict.keys()):
-                if "head" in k:
-                    del weights_dict[k]
-            print(model.load_state_dict(weights_dict, strict=False))
 
     if args.lora == 1 and args.alg!='FLORA':
         model = get_peft_model(model, lora_config)
