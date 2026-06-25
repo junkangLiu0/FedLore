@@ -106,7 +106,28 @@ pip install torch torchvision torchaudio --index-url https://download.pytorch.or
 pip install numpy scipy scikit-learn matplotlib tqdm tensorboardX ray peft transformers
 ```
 
-Or install from `requirements.txt`:
+## Installation
+
+```bash
+conda create -n fedmuon python=3.8 -y
+conda activate fedmuon
+
+pip install torch torchvision
+pip install numpy matplotlib filelock tensorboardX ray==1.0.0
+pip install peft transformers
+```
+
+Recommended package versions used by the original implementation:
+
+```text
+python >= 3.8
+torch >= 2.0
+torchvision >= 0.15
+ray == 1.0.0
+tensorboardX == 2.6.2.2
+peft == 0.13.2
+transformers == 4.46.3
+```
 
 ```bash
 pip install -r requirements.txt
