@@ -109,8 +109,8 @@ pip install numpy scipy scikit-learn matplotlib tqdm tensorboardX ray peft trans
 ## Installation
 
 ```bash
-conda create -n fedmuon python=3.8 -y
-conda activate fedmuon
+conda create -n fedlore python=3.8 -y
+conda activate fedlore
 
 pip install torch torchvision
 pip install numpy matplotlib filelock tensorboardX ray==1.0.0
@@ -189,7 +189,6 @@ Equivalent expanded form:
 ```bash
 python  main_FedLore.py --alg FedIT --lr 1e-3 --data_name CIFAR100 --alpha_value 0.1  --epoch 101  --extname FedMerge --lr_decay 2 --gamma 0.9  --CNN  VIT-B --E 5 --batch_size 16   --gpu 0 --p 1 --num_gpus_per 0.2 --selection 0.1 --pre 1 --num_workers 50 --preprint 10 --rho 0.01 --lora 1 --K 50 --r 8  --alpha  1
 ```
-
 ---
 
 ## More Running Examples
@@ -243,19 +242,19 @@ python  main_FedLore.py --alg RoLoRA --lr 1e-3 --data_name CIFAR100 --alpha_valu
 ### FLoRA
 
 ```bash
-python main_FedLore.py --alg FLORA --data_name CIFAR100 --alpha_value 0.1 --num_workers 50 --selection 0.1 --K 50 --lr 1e-3 --r 8 --lora 1 --gpu 0 --num_gpus_per 0.2 --extname FLoRA_CIFAR100_ViTB
+python  main_FedLore.py --alg FLORA --lr 1e-3 --data_name CIFAR100 --alpha_value 0.1  --epoch 101  --extname FedMerge --lr_decay 2 --gamma 0.9  --CNN  swin_base --E 5 --batch_size 16   --gpu 0 --p 1 --num_gpus_per 0.2 --selection 0.1 --pre 1 --num_workers 50 --preprint 10 --rho 0.01 --lora 1 --K 50 --r 8  --alpha  1
 ```
 
 ### FRLoRA
 
 ```bash
-python main_FedLore.py --alg FRLoRA --data_name CIFAR100 --alpha_value 0.1 --num_workers 50 --selection 0.1 --K 50 --lr 1e-3 --r 8 --lora 1 --gpu 0 --num_gpus_per 0.2 --extname FRLoRA_CIFAR100_ViTB
+python  main_FedLore.py --alg FRLoRA --lr 1e-3 --data_name CIFAR100 --alpha_value 0.1  --epoch 101  --extname FedMerge --lr_decay 2 --gamma 0.9  --CNN  swin_base --E 5 --batch_size 16   --gpu 0 --p 1 --num_gpus_per 0.2 --selection 0.1 --pre 1 --num_workers 50 --preprint 10 --rho 0.01 --lora 1 --K 50 --r 8  --alpha  1
 ```
 
 ### FedFull
 
 ```bash
-python main_FedLore.py --alg Fedfull --data_name CIFAR100 --alpha_value 0.1 --num_workers 50 --selection 0.1 --K 50 --lr 1e-4 --r 8 --lora 0 --gpu 0 --num_gpus_per 0.2 --extname FedFull_CIFAR100_ViTB
+python  main_FedLore.py --alg Fedfull --lr 1e-3 --data_name CIFAR100 --alpha_value 0.1  --epoch 101  --extname FedMerge --lr_decay 2 --gamma 0.9  --CNN  swin_base --E 5 --batch_size 16   --gpu 0 --p 1 --num_gpus_per 0.2 --selection 0.1 --pre 1 --num_workers 50 --preprint 10 --rho 0.01 --lora 1 --K 50 --r 8  --alpha  1
 ```
 
 ---
@@ -517,9 +516,7 @@ Recommended seeds:
 | FedLore   | `FedGalore` | `0`      | `1e-3`     |
 
 ---
-
 ## Citation
-
 If you find this repository useful, please consider citing:
 
 ```bibtex
@@ -530,33 +527,8 @@ If you find this repository useful, please consider citing:
   year      = {2026}
 }
 ```
-
 ---
 
-## Acknowledgements
-
-FedLore builds on ideas from federated learning, parameter-efficient fine-tuning, LoRA-style adaptation, and gradient low-rank projection.
-
-The goal of this project is to make large-scale federated optimization more practical through:
-
-* low-rank communication,
-* memory-efficient optimization,
-* shared subspace alignment,
-* and full-space model updates.
-
----
-
-## License
-
-This project is released under the MIT License.
-
----
-
-<div align="center">
-
-### FedLore
-
-**Low-rank client budgets. Full-space federated learning.**
 
 </div>
 ```
