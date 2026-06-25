@@ -8,7 +8,7 @@ import ray
 import argparse
 from tensorboardX import SummaryWriter
 from DomainNet import DomainNet
-from dirichlet_data2 import data_from_dirichlet
+from dirichlet_data import data_from_dirichlet
 from lora_SVD import aggregate_AB_then_SVD, aggregate_FRLORA
 from lora_fair import apply_weights_lora_fair, apply_weights_lora_fair_CV
 from models.DeiTTiny import ViTForCIFAR
