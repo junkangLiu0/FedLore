@@ -187,7 +187,7 @@ This command relies on the following default values in the code:
 Equivalent expanded form:
 
 ```bash
-python main_FedLore.py --alg FedGalore --CNN VIT-B --data_name CIFAR100 --alpha_value 0.1 --num_workers 50 --selection 0.1 --epoch 100 --E 1 --K 50 --batch_size 16 --lr 1e-3 --lr_decay 0.99 --r 8 --lora 0 --gpu 0 --num_gpus_per 0.2 --extname FedLore_CIFAR100_ViTB
+python  main_FedLore.py --alg FedIT --lr 1e-3 --data_name CIFAR100 --alpha_value 0.1  --epoch 101  --extname FedMerge --lr_decay 2 --gamma 0.9  --CNN  VIT-B --E 5 --batch_size 16   --gpu 0 --p 1 --num_gpus_per 0.2 --selection 0.1 --pre 1 --num_workers 50 --preprint 10 --rho 0.01 --lora 1 --K 50 --r 8  --alpha  1
 ```
 
 ---
@@ -197,19 +197,19 @@ python main_FedLore.py --alg FedGalore --CNN VIT-B --data_name CIFAR100 --alpha_
 ### FedLore on Tiny-ImageNet with Swin-Base
 
 ```bash
-python main_FedLore.py --alg FedGalore --CNN swin_base --data_name imagenet --datapath ./data --alpha_value 0.1 --num_workers 50 --selection 0.1 --K 50 --lr 1e-3 --r 8 --lora 0 --gpu 0 --num_gpus_per 0.2 --extname FedLore_TinyImageNet_SwinBase
+python  main_FedLore.py --alg FedIT --lr 1e-3 --data_name CIFAR100 --alpha_value 0.1  --epoch 101  --extname FedMerge --lr_decay 2 --gamma 0.9  --CNN  swin_base --E 5 --batch_size 16   --gpu 0 --p 1 --num_gpus_per 0.2 --selection 0.1 --pre 1 --num_workers 50 --preprint 10 --rho 0.01 --lora 1 --K 50 --r 8  --alpha  1
 ```
 
 ### FedLore on CIFAR-100 with Swin-Base
 
 ```bash
-python main_FedLore.py --alg FedGalore --CNN swin_base --data_name CIFAR100 --alpha_value 0.1 --num_workers 50 --selection 0.1 --K 50 --lr 1e-3 --r 8 --lora 0 --gpu 0 --num_gpus_per 0.2 --extname FedLore_CIFAR100_SwinBase
+python  main_FedLore.py --alg FedIT --lr 1e-3 --data_name imagenet --alpha_value 0.1  --epoch 101  --extname FedMerge --lr_decay 2 --gamma 0.9  --CNN  swin_base --E 5 --batch_size 16   --gpu 0 --p 1 --num_gpus_per 0.2 --selection 0.1 --pre 1 --num_workers 50 --preprint 10 --rho 0.01 --lora 1 --K 50 --r 8  --alpha  1
 ```
 
 ### FedLore on CIFAR-100 with ViT-Tiny
 
 ```bash
-python main_FedLore.py --alg FedGalore --CNN deit_tiny --data_name CIFAR100 --alpha_value 0.1 --num_workers 50 --selection 0.1 --K 50 --lr 1e-3 --r 8 --lora 0 --gpu 0 --num_gpus_per 0.2 --extname FedLore_CIFAR100_ViTTiny
+python  main_FedLore.py --alg FedIT --lr 1e-3 --data_name CIFAR100 --alpha_value 0.1  --epoch 101  --extname FedMerge --lr_decay 2 --gamma 0.9  --CNN  swin_base --E 5 --batch_size 16   --gpu 0 --p 1 --num_gpus_per 0.2 --selection 0.1 --pre 1 --num_workers 50 --preprint 10 --rho 0.01 --lora 1 --K 50 --r 8  --alpha  1
 ```
 
 ---
@@ -219,25 +219,25 @@ python main_FedLore.py --alg FedGalore --CNN deit_tiny --data_name CIFAR100 --al
 ### FedIT
 
 ```bash
-python main_FedLore.py --alg FedIT --data_name CIFAR100 --alpha_value 0.1 --num_workers 50 --selection 0.1 --K 50 --lr 1e-3 --r 8 --lora 1 --gpu 0 --num_gpus_per 0.2 --extname FedIT_CIFAR100_ViTB
+python  main_FedLore.py --alg FedIT --lr 1e-3 --data_name CIFAR100 --alpha_value 0.1  --epoch 101  --extname FedMerge --lr_decay 2 --gamma 0.9  --CNN  swin_base --E 5 --batch_size 16   --gpu 0 --p 1 --num_gpus_per 0.2 --selection 0.1 --pre 1 --num_workers 50 --preprint 10 --rho 0.01 --lora 1 --K 50 --r 8  --alpha  1
 ```
 
 ### LoRA-FAIR
 
 ```bash
-python main_FedLore.py --alg LORA_FAIR --data_name CIFAR100 --alpha_value 0.1 --num_workers 50 --selection 0.1 --K 50 --lr 1e-3 --r 8 --lora 1 --gpu 0 --num_gpus_per 0.2 --extname LoRAFAIR_CIFAR100_ViTB
+python  main_FedLore.py --alg LORA_FAIR --lr 1e-3 --data_name CIFAR100 --alpha_value 0.1  --epoch 101  --extname FedMerge --lr_decay 2 --gamma 0.9  --CNN  swin_base --E 5 --batch_size 16   --gpu 0 --p 1 --num_gpus_per 0.2 --selection 0.1 --pre 1 --num_workers 50 --preprint 10 --rho 0.01 --lora 1 --K 50 --r 8  --alpha  1
 ```
 
 ### FFA-LoRA
 
 ```bash
-python main_FedLore.py --alg FFA_LoRA --data_name CIFAR100 --alpha_value 0.1 --num_workers 50 --selection 0.1 --K 50 --lr 1e-3 --r 8 --lora 1 --gpu 0 --num_gpus_per 0.2 --extname FFALoRA_CIFAR100_ViTB
+python  main_FedLore.py --alg FFA_LoRA --lr 1e-3 --data_name CIFAR100 --alpha_value 0.1  --epoch 101  --extname FedMerge --lr_decay 2 --gamma 0.9  --CNN  swin_base --E 5 --batch_size 16   --gpu 0 --p 1 --num_gpus_per 0.2 --selection 0.1 --pre 1 --num_workers 50 --preprint 10 --rho 0.01 --lora 1 --K 50 --r 8  --alpha  1
 ```
 
 ### RoLoRA
 
 ```bash
-python main_FedLore.py --alg RoLoRA --data_name CIFAR100 --alpha_value 0.1 --num_workers 50 --selection 0.1 --K 50 --lr 1e-3 --r 8 --lora 1 --gpu 0 --num_gpus_per 0.2 --extname RoLoRA_CIFAR100_ViTB
+python  main_FedLore.py --alg RoLoRA --lr 1e-3 --data_name CIFAR100 --alpha_value 0.1  --epoch 101  --extname FedMerge --lr_decay 2 --gamma 0.9  --CNN  swin_base --E 5 --batch_size 16   --gpu 0 --p 1 --num_gpus_per 0.2 --selection 0.1 --pre 1 --num_workers 50 --preprint 10 --rho 0.01 --lora 1 --K 50 --r 8  --alpha  1
 ```
 
 ### FLoRA
