@@ -27,57 +27,6 @@ In this way, FedLore preserves the flexibility of full-parameter learning while 
 
 ---
 
-## Key Idea
-
-LoRA-style federated learning is efficient, but it restricts all optimization to a fixed adapter subspace. This fixed-subspace constraint can become too rigid under strong non-IID data and is especially limiting for pre-training.
-
-FedLore introduces a dynamic shared-subspace paradigm.
-
-At round `t`, the server constructs a shared projector `P_t`. Each selected client receives the global model and this projector, performs local optimization in the low-rank coordinate system, and uploads only the compact low-rank update `ΔZ_i`. Since the server already knows `P_t`, it can reconstruct the full-space update `P_t ΔZ_i` and aggregate updates in the original parameter space.
-
-```text
-Server builds shared projector P_t
-        ↓
-Clients optimize in the shared low-rank space
-        ↓
-Clients upload compact low-rank updates ΔZ_i
-        ↓
-Server reconstructs full-space updates P_t ΔZ_i
-        ↓
-Server aggregates and updates the global model
-````
-
----
-
-## Highlights
-
-* Dynamic low-rank subspace switching across communication rounds
-* Shared projection across clients to reduce projection drift
-* Low-rank client upload with full-space server aggregation
-* Low optimizer memory through projected-coordinate optimization
-* Strong compatibility with transformer-based vision backbones
-* Ray-based parallel federated client simulation
-* Dirichlet non-IID data partitioning
-* Cleaned vision-side implementation aligned with the paper setting
-
----
-
-## Method Comparison
-
-| Method          | Optimization Space                 | Client Upload | Optimizer Memory | Key Limitation                               |
-| :-------------- | :--------------------------------- | :------------ | :--------------- | :------------------------------------------- |
-| FedIT / LoRA-FL | Fixed adapter subspace             | Low           | Low              | Frozen backbone and fixed subspace           |
-| FedFull         | Full parameter space               | High          | High             | Expensive communication and optimizer states |
-| Local GaLore    | Client-specific projected space    | High          | Low              | Projection drift across clients              |
-| **FedLore**     | **Dynamic shared projected space** | **Low**       | **Low**          | Efficient full-space learning                |
-
-FedLore is designed to answer a central question:
-
-> Can federated learning recover the flexibility of full-parameter optimization while keeping client cost close to LoRA?
-
-FedLore answers this through dynamic shared low-rank projection.
-
----
 
 ## Repository Structure
 
@@ -125,15 +74,6 @@ The current vision-side implementation keeps the models used in the paper's visi
 | `--CNN swin_base` | Swin-Base                        |
 | `--CNN deit_tiny` | ViT-Tiny / DeiT-Tiny style model |
 
-By default, the script uses:
-
-```bash
---CNN VIT-B
-```
-
-Therefore, when running ViT-Base experiments, this argument can be omitted.
-
----
 
 ## Supported Datasets
 
@@ -142,13 +82,6 @@ Therefore, when running ViT-Base experiments, this argument can be omitted.
 | `--data_name CIFAR10`            | CIFAR-10                   |
 | `--data_name CIFAR100`           | CIFAR-100                  |
 | `--data_name imagenet`           | Tiny-ImageNet-style loader |
-| `--data_name domainnet_real`     | DomainNet Real             |
-| `--data_name domainnet_clipart`  | DomainNet Clipart          |
-| `--data_name domainnet_painting` | DomainNet Painting         |
-
-The paper-style vision experiments focus on transformer backbones under heterogeneous federated settings, especially CIFAR-100 and Tiny-ImageNet with Dirichlet non-IID partitioning.
-
----
 
 ## Installation
 
