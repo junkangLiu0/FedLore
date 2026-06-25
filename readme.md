@@ -97,6 +97,21 @@ FedLore/
 ├── requirements.txt
 └── README.md
 ```
+下载模型权重网址：
+下载下来的权重直接放主文件夹下面就行，你也可以自己该目类
+
+vit-base：
+https://huggingface.co/Junkang2/vit/tree/main
+
+swin_transformer 
+https://huggingface.co/Junkang2/swin_transformer/tree/main
+
+## Dataset
+
+数据集下载网址
+
+Tiny-ImageNet：
+https://huggingface.co/datasets/Junkang2/Tiny-ImageNet/upload/main
 
 
 
