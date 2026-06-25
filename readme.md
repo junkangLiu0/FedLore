@@ -162,33 +162,6 @@ data/
     ├── val/
     └── test/
 ```
-
-Run with:
-
-```bash
---data_name imagenet --datapath ./data
-```
-
-### DomainNet
-
-Place DomainNet under:
-
-```text
-./data/domainnet/
-```
-
-The code is also compatible with the older path:
-
-```text
-./data/dominnet/
-```
-
-Example usage:
-
-```bash
---data_name domainnet_real
-```
-
 ---
 
 ## Quick Start
